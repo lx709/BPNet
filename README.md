@@ -18,11 +18,11 @@ $ pip install imageio==2.8.0 opencv-python==4.2.0.32 pillow==7.0.0 pyyaml==5.3 s
 ```
 
 ## 2. Data Preparation
-- Please download the data associated with 3d compat by filling this form[]. 
+- Please download the data associated with 3d compat by filling this form [https://3dcompat-dataset.org/doc/dl-dataset.html]. 
 
-- Change the data_root in dataset/GCR_loader.py
+- Change the data_root in ```tool/train.py``` [https://github.com/lx709/BPNet/blob/24de1967aa470b7d1affa961db7b179bb3d1faac/tool/train.py#LL218C18-L218C18]
 
-- For the efficiency of the datanet, we prvoide the point clouds generated from the 3dcompat models. 
+- For the efficiency of the datanet, we prvoide the point clouds generated from the 3dcompat models. Change the data directory here [https://github.com/lx709/BPNet/blob/24de1967aa470b7d1affa961db7b179bb3d1faac/dataset/GCR_loader.py#L412].
 
 - Download pretrained 2D ResNets on ImageNet from PyTorch website, and put them into the initmodel folder.
 ```
