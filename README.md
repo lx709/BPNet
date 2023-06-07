@@ -57,19 +57,21 @@ For Example, we train 10 compositions with:
 
 ```sh tool/train.sh com10_coarse config/compat/bpnet_10_coarse.yaml 12```
 
-### 3.3 Pretrain Models
-
-Our pretrained Compositions of 10 models is in [comp10](https://drive.google.com/file/d/1PXzUXTcEd4AfzCyjFz-13s76FdljsG5p/view?usp=sharing)
-
-[//]: # (Our pretrained Compositions of 50 models is in:)
-
-[//]: # (https://drive.google.com/file/d/1u7CkloqHEkezFuUBnZQRnbxdW420Xgug/view?usp=sharing)
-
 ### 3.4 Test
 
 For Example, we evaluate  10 compositions with:
 
 ```sh tool/test.sh com10_coarse config/compat/bpnet_10_coarse.yaml 12```
+
+#### **Coarse-grained**
+|                   | Accuracy | Value | Value All | Grounded Value | Grounded Value All | Pretrained Model |
+|-------------------|----------|-------|-----------|----------------|--------------------|------------------|
+| BPNet Coarse Valid| 74.69    | 62.98 | 47.1      | 55.77          | 38.11              | link             |
+| BPNet Coarse Test | 76.1     | 65.21 | 51.05     | 58.4           | 42.54              | link             |
+
+
+#### **Fine-grained**
+
 
 ## License
 This code is released under MIT License (see LICENSE file for details). In simple words, if you copy/use parts of this code please keep the copyright note in place.
