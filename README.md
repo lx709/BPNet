@@ -18,11 +18,11 @@ $ pip install imageio==2.8.0 opencv-python==4.2.0.32 pillow==7.0.0 pyyaml==5.3 s
 ```
 
 ## 2. Data Preparation
-- Please download the data associated with 3d compat by filling this form. 
-- We defaultly stored the dataset in `3dcompat/` (2D Images in `3dcompat/image/`, 3d Point Cloud in `3dcompat/pc/`).
-You can also modify the `data_root` and `data_root2d` in the config files (e.g. `config/compat/bpnet_10.yaml`)
+- Please download the data associated with 3d compat by filling this form[]. 
 
-- For the efficiency of the datanet, we prvoide the point clouds generated from the 3dcompat models. The processing of how we generate the data is from this file `prepare_3d_data/GLB2PC-NonStyle.py`. You can also generate the point clouds from models in your sides. Note that the preprocessed point clouds do not include material information. Material information are stored in 2D images only.
+- Change the data_root in dataset/GCR_loader.py
+
+- For the efficiency of the datanet, we prvoide the point clouds generated from the 3dcompat models. 
 
 - Download pretrained 2D ResNets on ImageNet from PyTorch website, and put them into the initmodel folder.
 ```
