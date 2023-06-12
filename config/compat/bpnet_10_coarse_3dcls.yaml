@@ -1,5 +1,7 @@
 DATA:
   data_name: 3dcompat
+  data_root: '/lustre/scratch/project/k1546/3DCoMPaT-v2/shards/'
+  sem_level: coarse
   classes:  44 # 275 for fine, 43 for coarse, add background as 0
   aug: True
   voxelSize: 0.01
