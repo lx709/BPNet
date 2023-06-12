@@ -215,12 +215,12 @@ def main_worker(gpu, ngpus_per_node, argss):
         import webdataset as wds
         from dataset.GCR_loader import GCRLoader3D
 
-        ROOT_URL = '/lustre/scratch/project/k1546/3DCoMPaT-v2/shards/'
+        ROOT_URL = args.data_root
 
-        train_loader = GCRLoader3D(root_url=ROOT_URL, split='train', n_comp=args.com, view_type=args.view_type, sem_level="coarse").make_loader(batch_size=args.batch_size, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
+        train_loader = GCRLoader3D(root_url=ROOT_URL, split='train', n_comp=args.com, view_type=args.view_type, sem_level=args.sem_level).make_loader(batch_size=args.batch_size, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
 
         if args.evaluate:
-            val_loader = GCRLoader3D(root_url=ROOT_URL, split='valid', n_comp=args.com, view_type=args.view_type, sem_level="coarse").make_loader(batch_size=args.batch_size_val, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
+            val_loader = GCRLoader3D(root_url=ROOT_URL, split='valid', n_comp=args.com, view_type=args.view_type, sem_level=args.sem_level).make_loader(batch_size=args.batch_size_val, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
                 
     else:
         raise Exception('Dataset not supported yet'.format(args.data_name))

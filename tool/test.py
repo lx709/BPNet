@@ -167,11 +167,11 @@ def main_worker(gpu, ngpus_per_node, argss):
         import webdataset as wds
         from dataset.GCR_loader import GCRLoader3D
 
-        ROOT_URL = '/lustre/scratch/project/k1546/3DCoMPaT-v2/shards/'
+        ROOT_URL = args.data_root
 
-        val_loader = GCRLoader3D(root_url=ROOT_URL, split='valid', n_comp=args.com, view_type=args.view_type, sem_level="coarse").make_loader(batch_size=args.batch_size_val, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
+        val_loader = GCRLoader3D(root_url=ROOT_URL, split='valid', n_comp=args.com, view_type=args.view_type, sem_level=args.sem_level).make_loader(batch_size=args.batch_size_val, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
         
-        test_loader = GCRLoader3D(root_url=ROOT_URL, split='test', n_comp=args.com, view_type=args.view_type, sem_level="coarse").make_loader(batch_size=args.test_batch_size, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
+        test_loader = GCRLoader3D(root_url=ROOT_URL, split='test', n_comp=args.com, view_type=args.view_type, sem_level=args.sem_level).make_loader(batch_size=args.test_batch_size, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
         
     else:
         raise Exception('Dataset not supported yet'.format(args.data_name))
@@ -208,10 +208,10 @@ def validate_cross(model, val_loader):
             mat3d = mat3d.cuda(non_blocking=True)
 
             output_3d, output_2d, output_mat, output_3dmat, output_cls = model(sinput, color, link)
-            print('before output_3d, output_3dmat', output_3d.shape, output_3dmat.shape)
+#             print('before output_3d, output_3dmat', output_3d.shape, output_3dmat.shape)
             output_3d = output_3d[inds_reverse, :]
             output_3dmat = output_3dmat[inds_reverse, :]
-            print('after output_3d, output_3dmat', output_3d.shape, output_3dmat.shape, label_3d.shape, mat3d.shape)
+#             print('after output_3d, output_3dmat', output_3d.shape, output_3dmat.shape, label_3d.shape, mat3d.shape)
             
             # ############ 3D ############ #
 
