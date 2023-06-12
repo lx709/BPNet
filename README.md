@@ -21,7 +21,7 @@ $ pip install imageio==2.8.0 opencv-python==4.2.0.32 pillow==7.0.0 pyyaml==5.3 s
 - Please download the data associated with 3d compat by filling this form https://3dcompat-dataset.org/doc/dl-dataset.html. 
 
 - Change the data_root in config file to your own path.
-https://github.com/lx709/BPNet/blob/2c038c84cc296a7cc57fbf9a21ef905ef6d7eab5/config/compat/bpnet_10_coarse.yaml#L3C5
+https://github.com/lx709/BPNet/blob/ae8a271016ac058c9b1cb0e3ed511a4e05928c04/config/compat/bpnet_10_coarse.yaml#L3
 
 - For the efficiency of the datanet, we prvoide the point clouds generated from the 3dcompat models. Change the data directory accordingly. https://github.com/lx709/BPNet/blob/24de1967aa470b7d1affa961db7b179bb3d1faac/dataset/GCR_loader.py#L412.
 
