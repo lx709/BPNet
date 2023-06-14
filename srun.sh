@@ -6,10 +6,10 @@
 #SBATCH -e bpnet.%J.err
 #SBATCH --mail-user=xiang.li.1@kaust.edu.sa
 #SBATCH --mail-type=ALL
-#SBATCH --time=96:00:00
+#SBATCH --time=48:00:00
 #SBATCH --mem=96G
-#SBATCH --gres=gpu:v100:6
-#SBATCH --cpus-per-task=12
+#SBATCH --gres=gpu:v100:4
+#SBATCH --cpus-per-task=16
 
 cd /ibex/ai/home/lix0i/3DCoMPaT/BPNet
 
@@ -130,20 +130,18 @@ conda activate BPNet
 # [2023-04-28 15:07:44,846 INFO train_xiang.py line 654 141754] Class ACC0.7423
 
 ### TOTO
-# sh ./tool/train.sh com10_coarse config/compat/bpnet_10_coarse.yaml 16
+sh ./tool/train.sh com10_coarse_rerun config/compat/bpnet_10_coarse.yaml 16
 
-# sh ./tool/train.sh com10_coarse_3dcls config/compat/bpnet_10_coarse_3dcls.yaml 16
+# sh ./tool/test.sh com10_coarse_3dcls config/compat/bpnet_10_coarse_3dcls.yaml 16
 # 26017696
 
-# sh ./tool/train.sh com10_fine_v2 config/compat/bpnet_10_fine.yaml 12
+# sh ./tool/train.sh com10_fine_v4 config/compat/bpnet_10_fine.yaml 12
 # 26018855
 
-sh ./tool/train.sh com10_fine_3dcls_v2 config/compat/bpnet_10_fine_3dcls.yaml 12
+# sh ./tool/train.sh com10_fine_3dcls_v2 config/compat/bpnet_10_fine_3dcls.yaml 12
 # 26018860
 
 ### Test
 # sh ./tool/test.sh com10_coarse config/compat/bpnet_10_coarse.yaml 16
 
-# sh ./tool/test.sh com10_fine config/compat/bpnet_10_fine.yaml 16
-
-
+# sh ./tool/test.sh com10_fine_v4 config/compat/bpnet_10_fine.yaml 16

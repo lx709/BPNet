@@ -169,7 +169,7 @@ def main_worker(gpu, ngpus_per_node, argss):
 
         ROOT_URL = args.data_root
 
-        val_loader = GCRLoader3D(root_url=ROOT_URL, split='valid', n_comp=args.com, view_type=args.view_type, sem_level=args.sem_level).make_loader(batch_size=args.batch_size_val, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
+        val_loader = GCRLoader3D(root_url=ROOT_URL, split='valid', n_comp=args.com, view_type=args.view_type, sem_level=args.sem_level).make_loader(batch_size=args.test_batch_size, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
         
         test_loader = GCRLoader3D(root_url=ROOT_URL, split='test', n_comp=args.com, view_type=args.view_type, sem_level=args.sem_level).make_loader(batch_size=args.test_batch_size, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
         

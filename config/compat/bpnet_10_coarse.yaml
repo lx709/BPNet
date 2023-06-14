@@ -23,7 +23,7 @@ MODEL:
   ignore_label: 0
   
 TRAIN:
-  train_gpu: [0,1,2,3,4,5,6,7] #[ 0,1,2,3]
+  train_gpu: [0,1,2,3] #[ 0,1,2,3]
   workers: 12 # data loader workers
   batch_size: 96  # batch size for training
   batch_size_val: 96   # batch size for validation during training, memory and speed tradeoff
@@ -55,8 +55,8 @@ TEST:
   split: test  # split in [train, val and test]
   val_benchmark: True
   test_workers: 0
-  test_gpu:  [0,1]
-  test_batch_size: 24
+  test_gpu:  [0,1,2,3]
+  test_batch_size: 48
 
   model_path:
   save_folder:
