@@ -596,7 +596,7 @@ class GCRLoader3D(CompatLoader2D):
             # Note that you only need to do this when retrofitting code that depends on
             # epoch size. A better way is to iterate through the entire dataset on all nodes.
             dataset_size = self.dataset_size
-            number_of_batches = dataset_size // (batch_size * world_size * self.view_num)  ### Note that batch_size is the number of shapes
+            number_of_batches = int(np.ceil(dataset_size / (batch_size * world_size * self.view_num)))  ### Note that batch_size is the number of shapes
             print('{} dataset_size: '.format(self.split), dataset_size, batch_size, world_size, self.view_num)
             print("# batches per node = ", number_of_batches)
             loader = loader.repeat(2).slice(number_of_batches) # If dataset_size can be divided by (batch_size * world_size), then this do nothing, it works like keep_last in torch dataloader

@@ -31,17 +31,17 @@ result_dir=${exp_dir}/result
 
 # now=$(date +"%Y%m%d_%H%M%S")
 
-mkdir -p ${model_dir} ${result_dir}
-mkdir -p ${result_dir}/last
-mkdir -p ${result_dir}/best
+# mkdir -p ${model_dir} ${result_dir}
+# mkdir -p ${result_dir}/last
+# mkdir -p ${result_dir}/best
 # cp tool/train.sh tool/${TRAIN_CODE} ${config}  ${exp_dir}
 cp tool/test.sh tool/${TEST_CODE} ${exp_dir}
 
 export PYTHONPATH=.
 #rm -rf /dev/shm/wbhu*
 # echo $OMP_NUM_THREADS | tee -a ${exp_dir}/train-$now.log
-nvidia-smi | tee -a ${exp_dir}/train-$now.log
-which pip | tee -a ${exp_dir}/train-$now.log
+# nvidia-smi | tee -a ${exp_dir}/train-$now.log
+# which pip | tee -a ${exp_dir}/train-$now.log
 
 # $PYTHON -u ${exp_dir}/${TRAIN_CODE} \
 #   --config=${config} \
