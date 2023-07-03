@@ -72,6 +72,10 @@ For Example, we evaluate  10 compositions with:
 
 
 #### **Fine-grained**
+|                   | Accuracy | Value | Value All | Grounded Value | Grounded Value All | Pretrained Model |
+|-------------------|----------|-------|-----------|----------------|--------------------|------------------|
+| BPNet Fine Valid| 74.69    | 62.98 | 47.1      | 55.77          | 38.11              | [link](https://drive.google.com/file/d/1J297W4CHfg_uMRpeFtTSxbu5bp4rIpTL/view?usp=sharing)             |
+| BPNet Fine Test | 76.1     | 65.21 | 51.05     | 58.4           | 42.54              | same             |
 
 
 ## License
