@@ -20,10 +20,10 @@ $ pip install imageio==2.8.0 opencv-python==4.2.0.32 pillow==7.0.0 pyyaml==5.3 s
 ## 2. Data Preparation
 - Please download the data associated with 3d compat by filling this form https://3dcompat-dataset.org/doc/dl-dataset.html. 
 
-- Change the data_root here
-https://github.com/lx709/BPNet/blob/303894bb99f00282e3f25db0911ae88157877c09/tool/train.py#L218
+- Change the data_root in config file to your own path.
+https://github.com/lx709/BPNet/blob/ae8a271016ac058c9b1cb0e3ed511a4e05928c04/config/compat/bpnet_10_coarse.yaml#L3
 
-- For the efficiency of the datanet, we prvoide the point clouds generated from the 3dcompat models. Change the data directory here https://github.com/lx709/BPNet/blob/24de1967aa470b7d1affa961db7b179bb3d1faac/dataset/GCR_loader.py#L412.
+- For the efficiency of the datanet, we prvoide the point clouds generated from the 3dcompat models. Change the data directory accordingly. https://github.com/lx709/BPNet/blob/24de1967aa470b7d1affa961db7b179bb3d1faac/dataset/GCR_loader.py#L412.
 
 - Download pretrained 2D ResNets on ImageNet from PyTorch website, and put them into the initmodel folder.
 ```
@@ -72,7 +72,10 @@ For Example, we evaluate  10 compositions with:
 
 
 #### **Fine-grained**
-
+|                   | Accuracy | Value | Value All | Grounded Value | Grounded Value All | Pretrained Model |
+|-------------------|----------|-------|-----------|----------------|--------------------|------------------|
+| BPNet Fine Valid| 77.38    | 37.61 | 6.87      | 21.48          | 2.51              | [link](https://drive.google.com/file/d/1J297W4CHfg_uMRpeFtTSxbu5bp4rIpTL/view?usp=sharing)             |
+| BPNet Fine Test | 79.64     | 41.76 | 10.76     | 25.21           | 4.38              | same             |
 
 ## License
 This code is released under MIT License (see LICENSE file for details). In simple words, if you copy/use parts of this code please keep the copyright note in place.
