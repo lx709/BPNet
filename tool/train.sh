@@ -56,8 +56,8 @@ $PYTHON -u ${exp_dir}/${TRAIN_CODE} \
 #  model_path ${model_dir}/model_last.pth.tar \
 #  2>&1 | tee -a ${exp_dir}/test_last-$now.log
 
-$PYTHON -u tool/${TEST_CODE}  \
- --config=${config} \
- save_folder ${result_dir}/best \
- model_path ${model_dir}/model_best.pth.tar \
- 2>&1 | tee -a ${exp_dir}/test_best-$now.log
+# $PYTHON -u tool/${TEST_CODE}  \
+#  --config=${config} \
+#  save_folder ${result_dir}/best \
+#  model_path ${model_dir}/model_best.pth.tar \
+#  2>&1 | tee -a ${exp_dir}/test_best-$now.log

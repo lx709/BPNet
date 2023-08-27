@@ -331,183 +331,185 @@ def train_cross(train_loader, model, criterion, optimizer, epoch):
     for i, batch_data in enumerate(train_loader):
         data_time.update(time.time() - end)
         
-        if args.data_name == '3dcompat':
-            (coords, feat, label_3d, color, label_2d, link, cls, mat, mat_3d, model_id, _, _, _) = batch_data
-            # For some networks, making the network invariant to even, odd coords is important
-            coords[:, 1:4] += (torch.rand(3) * 100).type_as(coords)
-            
-            sinput = SparseTensor(feat.cuda(non_blocking=True), coords) #allow_duplicate_coords=True
-            color, link = color.cuda(non_blocking=True), link.cuda(non_blocking=True)
-
-            label_3d, label_2d = label_3d.cuda(non_blocking=True), label_2d.cuda(non_blocking=True)
-            cls, mat, mat_3d = cls.cuda(non_blocking=True), mat.cuda(non_blocking=True), mat_3d.cuda(non_blocking=True)
-
-#             print('model inputs:', sinput.shape, color.shape, link.shape, cls.shape)
-            output_3d, output_2d, output_mat, output_3dmat, output_cls = model(sinput, color, link)
-            
-#             print('model outputs:', output_3d.shape, output_2d.shape, output_mat.shape, output_3dmat.shape, output_cls.shape)
-            
-            loss_2d = criterion(output_2d, label_2d)
-            loss_mat = criterion(output_mat, mat)
+        print(i, train_loader.length)
         
-            loss_3d = criterion(output_3d, label_3d)
-            loss_3dmat = criterion(output_3dmat, mat_3d)
+#         if args.data_name == '3dcompat':
+#             (coords, feat, label_3d, color, label_2d, link, cls, mat, mat_3d, model_id, _, _, _) = batch_data
+#             # For some networks, making the network invariant to even, odd coords is important
+#             coords[:, 1:4] += (torch.rand(3) * 100).type_as(coords)
             
-#             print('output_cls, cls.max', output_cls.shape, output_cls[0], cls)
-            assert cls.max() <= args.categories - 1
-            loss_cls = criterion(output_cls, cls)
+#             sinput = SparseTensor(feat.cuda(non_blocking=True), coords) #allow_duplicate_coords=True
+#             color, link = color.cuda(non_blocking=True), link.cuda(non_blocking=True)
+
+#             label_3d, label_2d = label_3d.cuda(non_blocking=True), label_2d.cuda(non_blocking=True)
+#             cls, mat, mat_3d = cls.cuda(non_blocking=True), mat.cuda(non_blocking=True), mat_3d.cuda(non_blocking=True)
+
+# #             print('model inputs:', sinput.shape, color.shape, link.shape, cls.shape)
+#             output_3d, output_2d, output_mat, output_3dmat, output_cls = model(sinput, color, link)
             
-            if args.use_3d_classifier:
-                loss = loss_3d + loss_3dmat + args.weight_2d * (loss_2d + loss_mat) + loss_cls
-            else:
-                loss = loss_3d + loss_3dmat + args.weight_2d * (loss_2d + loss_mat + loss_cls)
-        else:
-            raise NotImplemented
+# #             print('model outputs:', output_3d.shape, output_2d.shape, output_mat.shape, output_3dmat.shape, output_cls.shape)
+            
+#             loss_2d = criterion(output_2d, label_2d)
+#             loss_mat = criterion(output_mat, mat)
         
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        # ############ 3D ############ #
-        output_3d = output_3d.detach().max(1)[1]
-        intersection, union, target = intersectionAndUnionGPU(output_3d, label_3d.detach(), args.classes,
-                                                              args.ignore_label)
-        intersection, union, target = intersection.cpu().numpy(), union.cpu().numpy(), target.cpu().numpy()
-        intersection_meter_3d.update(intersection)
-        union_meter_3d.update(union)
-        target_meter_3d.update(target)
-        accuracy_3d = sum(intersection_meter_3d.val) / (sum(target_meter_3d.val) + 1e-10)
-
-        # ############ mat_3d ############ #
-        output_3dmat = output_3dmat.detach().max(1)[1]
-        intersection, union, target = intersectionAndUnionGPU(output_3dmat, mat_3d.detach(), args.mat,
-                                                              args.ignore_label)
-        intersection, union, target = intersection.cpu().numpy(), union.cpu().numpy(), target.cpu().numpy()
-        intersection_meter_3dmat.update(intersection)
-        union_meter_3dmat.update(union)
-        target_meter_3dmat.update(target)
-        accuracy_3dmat = sum(intersection_meter_3d.val) / (sum(target_meter_3d.val) + 1e-10)
-
-        # ############ 2D ############ #
-        output_2d = output_2d.detach().max(1)[1]
-        intersection, union, target = intersectionAndUnionGPU(output_2d, label_2d.detach(), args.classes,
-                                                              args.ignore_label)
-        intersection, union, target = intersection.cpu().numpy(), union.cpu().numpy(), target.cpu().numpy()
-        intersection_meter_2d.update(intersection)
-        union_meter_2d.update(union)
-        target_meter_2d.update(target)
-        accuracy_2d = sum(intersection_meter_2d.val) / (sum(target_meter_2d.val) + 1e-10)
+#             loss_3d = criterion(output_3d, label_3d)
+#             loss_3dmat = criterion(output_3dmat, mat_3d)
+            
+# #             print('output_cls, cls.max', output_cls.shape, output_cls[0], cls)
+#             assert cls.max() <= args.categories - 1
+#             loss_cls = criterion(output_cls, cls)
+            
+#             if args.use_3d_classifier:
+#                 loss = loss_3d + loss_3dmat + args.weight_2d * (loss_2d + loss_mat) + loss_cls
+#             else:
+#                 loss = loss_3d + loss_3dmat + args.weight_2d * (loss_2d + loss_mat + loss_cls)
+#         else:
+#             raise NotImplemented
         
-        # ############ cls ############ #
-        output_cls = output_cls.detach().max(1)[1]
-        correct_guessed = output_cls == cls
-        cls_b_acc = torch.sum(correct_guessed.double()).item()
-        acc += cls_b_acc
-        total += output_cls.size(0)
+#         optimizer.zero_grad()
+#         loss.backward()
+#         optimizer.step()
+
+#         # ############ 3D ############ #
+#         output_3d = output_3d.detach().max(1)[1]
+#         intersection, union, target = intersectionAndUnionGPU(output_3d, label_3d.detach(), args.classes,
+#                                                               args.ignore_label)
+#         intersection, union, target = intersection.cpu().numpy(), union.cpu().numpy(), target.cpu().numpy()
+#         intersection_meter_3d.update(intersection)
+#         union_meter_3d.update(union)
+#         target_meter_3d.update(target)
+#         accuracy_3d = sum(intersection_meter_3d.val) / (sum(target_meter_3d.val) + 1e-10)
+
+#         # ############ mat_3d ############ #
+#         output_3dmat = output_3dmat.detach().max(1)[1]
+#         intersection, union, target = intersectionAndUnionGPU(output_3dmat, mat_3d.detach(), args.mat,
+#                                                               args.ignore_label)
+#         intersection, union, target = intersection.cpu().numpy(), union.cpu().numpy(), target.cpu().numpy()
+#         intersection_meter_3dmat.update(intersection)
+#         union_meter_3dmat.update(union)
+#         target_meter_3dmat.update(target)
+#         accuracy_3dmat = sum(intersection_meter_3d.val) / (sum(target_meter_3d.val) + 1e-10)
+
+#         # ############ 2D ############ #
+#         output_2d = output_2d.detach().max(1)[1]
+#         intersection, union, target = intersectionAndUnionGPU(output_2d, label_2d.detach(), args.classes,
+#                                                               args.ignore_label)
+#         intersection, union, target = intersection.cpu().numpy(), union.cpu().numpy(), target.cpu().numpy()
+#         intersection_meter_2d.update(intersection)
+#         union_meter_2d.update(union)
+#         target_meter_2d.update(target)
+#         accuracy_2d = sum(intersection_meter_2d.val) / (sum(target_meter_2d.val) + 1e-10)
         
-        # ############ materials ############ #
-        output_mat = output_mat.detach().max(1)[1]
-        intersection, union, target = intersectionAndUnionGPU(output_mat, mat.detach(), args.mat,
-                                                              args.ignore_label)
-        intersection, union, target = intersection.cpu().numpy(), union.cpu().numpy(), target.cpu().numpy()
-        intersection_meter_mat.update(intersection)
-        union_meter_mat.update(union)
-        target_meter_mat.update(target)
-        accuracy_mat = sum(intersection_meter_mat.val) / (sum(target_meter_mat.val) + 1e-10)
+#         # ############ cls ############ #
+#         output_cls = output_cls.detach().max(1)[1]
+#         correct_guessed = output_cls == cls
+#         cls_b_acc = torch.sum(correct_guessed.double()).item()
+#         acc += cls_b_acc
+#         total += output_cls.size(0)
+        
+#         # ############ materials ############ #
+#         output_mat = output_mat.detach().max(1)[1]
+#         intersection, union, target = intersectionAndUnionGPU(output_mat, mat.detach(), args.mat,
+#                                                               args.ignore_label)
+#         intersection, union, target = intersection.cpu().numpy(), union.cpu().numpy(), target.cpu().numpy()
+#         intersection_meter_mat.update(intersection)
+#         union_meter_mat.update(union)
+#         target_meter_mat.update(target)
+#         accuracy_mat = sum(intersection_meter_mat.val) / (sum(target_meter_mat.val) + 1e-10)
 
-        loss_meter.update(loss.item(), args.batch_size)
-        loss_meter_2d.update(loss_2d.item(), args.batch_size)
-        loss_meter_3d.update(loss_3d.item(), args.batch_size)
-        loss_meter_cls.update(loss_cls.item(), args.batch_size)
-        loss_meter_mat.update(loss_mat.item(), args.batch_size)
-        loss_meter_3dmat.update(loss_3dmat.item(), args.batch_size)
-        batch_time.update(time.time() - end)
-        end = time.time()
-        # 2d compat result:
+#         loss_meter.update(loss.item(), args.batch_size)
+#         loss_meter_2d.update(loss_2d.item(), args.batch_size)
+#         loss_meter_3d.update(loss_3d.item(), args.batch_size)
+#         loss_meter_cls.update(loss_cls.item(), args.batch_size)
+#         loss_meter_mat.update(loss_mat.item(), args.batch_size)
+#         loss_meter_3dmat.update(loss_3dmat.item(), args.batch_size)
+#         batch_time.update(time.time() - end)
+#         end = time.time()
+#         # 2d compat result:
 
-        # 3d compat resutl: Todo
-        # Adjust lr
-        current_iter = epoch * train_loader.length + i + 1
-        current_lr = poly_learning_rate(args.base_lr, current_iter, max_iter, power=args.power)
-        # if args.arch == 'cross_p5' or args.arch == 'cross_p2':
-        for index in range(0, args.index_split):
-            optimizer.param_groups[index]['lr'] = current_lr
-        for index in range(args.index_split, len(optimizer.param_groups)):
-            optimizer.param_groups[index]['lr'] = current_lr * 10
-        # else:
-        #     for param_group in optimizer.param_groups:
-        #         param_group['lr'] = current_lr
+#         # 3d compat resutl: Todo
+#         # Adjust lr
+#         current_iter = epoch * train_loader.length + i + 1
+#         current_lr = poly_learning_rate(args.base_lr, current_iter, max_iter, power=args.power)
+#         # if args.arch == 'cross_p5' or args.arch == 'cross_p2':
+#         for index in range(0, args.index_split):
+#             optimizer.param_groups[index]['lr'] = current_lr
+#         for index in range(args.index_split, len(optimizer.param_groups)):
+#             optimizer.param_groups[index]['lr'] = current_lr * 10
+#         # else:
+#         #     for param_group in optimizer.param_groups:
+#         #         param_group['lr'] = current_lr
 
-        # calculate remain time
-        remain_iter = max_iter - current_iter
-        remain_time = remain_iter * batch_time.avg
-        t_m, t_s = divmod(remain_time, 60)
-        t_h, t_m = divmod(t_m, 60)
-        remain_time = '{:02d}:{:02d}:{:02d}'.format(int(t_h), int(t_m), int(t_s))
+#         # calculate remain time
+#         remain_iter = max_iter - current_iter
+#         remain_time = remain_iter * batch_time.avg
+#         t_m, t_s = divmod(remain_time, 60)
+#         t_h, t_m = divmod(t_m, 60)
+#         remain_time = '{:02d}:{:02d}:{:02d}'.format(int(t_h), int(t_m), int(t_s))
 
-        if (i + 1) % args.print_freq == 0 and main_process():
-            logger.info('Epoch: [{}/{}][{}/{}] '
-                        'Data {data_time.val:.3f} ({data_time.avg:.3f}) '
-                        'Batch {batch_time.val:.3f} ({batch_time.avg:.3f}) '
-                        'Remain {remain_time} '
-                        'Loss {loss_meter.val:.4f} '
-                        'Accuracy {accuracy:.4f}'
-                        'Loss {loss_meter_2d.val:.4f}'
-                        'Accuracy2D {accuracy_2d:.4f}'
-                        'Acc Cls {acc:.4f}'
-                        'Loss_mat {loss_meter_mat.val:.4f} '
-                        'Materials ACC {acc_mat:.4f}. '.format(epoch + 1, args.epochs, i + 1, train_loader.length,
-                                                               batch_time=batch_time, data_time=data_time,
-                                                               remain_time=remain_time,
-                                                               loss_meter=loss_meter_3d,
-                                                               accuracy=accuracy_3d,
-                                                               loss_meter_2d=loss_meter_2d,
-                                                               accuracy_2d=accuracy_2d,
-                                                               acc=acc / total, loss_meter_mat=loss_meter_mat,
-                                                               acc_mat=accuracy_mat))
-        if main_process():
-            writer.add_scalar('loss_train_batch', loss_meter.val, current_iter)
-            writer.add_scalar('loss3d_train_batch', loss_meter_3d.val, current_iter)
-            writer.add_scalar('loss2d_train_batch', loss_meter_2d.val, current_iter)
-            writer.add_scalar('mIoU3d_train_batch', np.mean(intersection_meter_3d.val / (union_meter_3d.val + 1e-10)),
-                              current_iter)
-            writer.add_scalar('mAcc3d_train_batch', np.mean(intersection_meter_3d.val / (target_meter_3d.val + 1e-10)),
-                              current_iter)
-            writer.add_scalar('allAcc3d_train_batch', accuracy_3d, current_iter)
+#         if (i + 1) % args.print_freq == 0 and main_process():
+#             logger.info('Epoch: [{}/{}][{}/{}] '
+#                         'Data {data_time.val:.3f} ({data_time.avg:.3f}) '
+#                         'Batch {batch_time.val:.3f} ({batch_time.avg:.3f}) '
+#                         'Remain {remain_time} '
+#                         'Loss {loss_meter.val:.4f} '
+#                         'Accuracy {accuracy:.4f}'
+#                         'Loss {loss_meter_2d.val:.4f}'
+#                         'Accuracy2D {accuracy_2d:.4f}'
+#                         'Acc Cls {acc:.4f}'
+#                         'Loss_mat {loss_meter_mat.val:.4f} '
+#                         'Materials ACC {acc_mat:.4f}. '.format(epoch + 1, args.epochs, i + 1, train_loader.length,
+#                                                                batch_time=batch_time, data_time=data_time,
+#                                                                remain_time=remain_time,
+#                                                                loss_meter=loss_meter_3d,
+#                                                                accuracy=accuracy_3d,
+#                                                                loss_meter_2d=loss_meter_2d,
+#                                                                accuracy_2d=accuracy_2d,
+#                                                                acc=acc / total, loss_meter_mat=loss_meter_mat,
+#                                                                acc_mat=accuracy_mat))
+#         if main_process():
+#             writer.add_scalar('loss_train_batch', loss_meter.val, current_iter)
+#             writer.add_scalar('loss3d_train_batch', loss_meter_3d.val, current_iter)
+#             writer.add_scalar('loss2d_train_batch', loss_meter_2d.val, current_iter)
+#             writer.add_scalar('mIoU3d_train_batch', np.mean(intersection_meter_3d.val / (union_meter_3d.val + 1e-10)),
+#                               current_iter)
+#             writer.add_scalar('mAcc3d_train_batch', np.mean(intersection_meter_3d.val / (target_meter_3d.val + 1e-10)),
+#                               current_iter)
+#             writer.add_scalar('allAcc3d_train_batch', accuracy_3d, current_iter)
 
-            writer.add_scalar('mIoU2d_train_batch', np.mean(intersection_meter_2d.val / (union_meter_2d.val + 1e-10)),
-                              current_iter)
-            writer.add_scalar('mAcc2d_train_batch', np.mean(intersection_meter_2d.val / (target_meter_2d.val + 1e-10)),
-                              current_iter)
-            writer.add_scalar('allAcc2d_train_batch', accuracy_2d, current_iter)
+#             writer.add_scalar('mIoU2d_train_batch', np.mean(intersection_meter_2d.val / (union_meter_2d.val + 1e-10)),
+#                               current_iter)
+#             writer.add_scalar('mAcc2d_train_batch', np.mean(intersection_meter_2d.val / (target_meter_2d.val + 1e-10)),
+#                               current_iter)
+#             writer.add_scalar('allAcc2d_train_batch', accuracy_2d, current_iter)
 
-            writer.add_scalar('learning_rate', current_lr, current_iter)
+#             writer.add_scalar('learning_rate', current_lr, current_iter)
 
-    iou_class_3d = intersection_meter_3d.sum / (union_meter_3d.sum + 1e-10)
-    accuracy_class_3d = intersection_meter_3d.sum / (target_meter_3d.sum + 1e-10)
-    mIoU_3d = np.mean(iou_class_3d)
-    mAcc_3d = np.mean(accuracy_class_3d)
-    allAcc_3d = sum(intersection_meter_3d.sum) / (sum(target_meter_3d.sum) + 1e-10)
+#     iou_class_3d = intersection_meter_3d.sum / (union_meter_3d.sum + 1e-10)
+#     accuracy_class_3d = intersection_meter_3d.sum / (target_meter_3d.sum + 1e-10)
+#     mIoU_3d = np.mean(iou_class_3d)
+#     mAcc_3d = np.mean(accuracy_class_3d)
+#     allAcc_3d = sum(intersection_meter_3d.sum) / (sum(target_meter_3d.sum) + 1e-10)
 
-    iou_class_2d = intersection_meter_2d.sum / (union_meter_2d.sum + 1e-10)
-    accuracy_class_2d = intersection_meter_2d.sum / (target_meter_2d.sum + 1e-10)
-    mIoU_2d = np.mean(iou_class_2d)
-    mAcc_2d = np.mean(accuracy_class_2d)
-    allAcc_2d = sum(intersection_meter_2d.sum) / (sum(target_meter_2d.sum) + 1e-10)
+#     iou_class_2d = intersection_meter_2d.sum / (union_meter_2d.sum + 1e-10)
+#     accuracy_class_2d = intersection_meter_2d.sum / (target_meter_2d.sum + 1e-10)
+#     mIoU_2d = np.mean(iou_class_2d)
+#     mAcc_2d = np.mean(accuracy_class_2d)
+#     allAcc_2d = sum(intersection_meter_2d.sum) / (sum(target_meter_2d.sum) + 1e-10)
 
-    if main_process():
-        logger.info(
-            'Train result at epoch [{}/{}]: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.'.format(epoch + 1, args.epochs,
-                                                                                           mIoU_3d, mAcc_3d, allAcc_3d))
-        logger.info(
-            'Train result 2d at epoch [{}/{}]: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.'.format(epoch + 1, args.epochs,
-                                                                                              mIoU_2d, mAcc_2d,
-                                                                                              allAcc_2d))
-        logger.info('Train result cls at at epoch [{}/{}]: acc:{:.4f}/total:{}'.format(epoch + 1, args.epochs,
-                                                                                       acc / total, total))
+#     if main_process():
+#         logger.info(
+#             'Train result at epoch [{}/{}]: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.'.format(epoch + 1, args.epochs,
+#                                                                                            mIoU_3d, mAcc_3d, allAcc_3d))
+#         logger.info(
+#             'Train result 2d at epoch [{}/{}]: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.'.format(epoch + 1, args.epochs,
+#                                                                                               mIoU_2d, mAcc_2d,
+#                                                                                               allAcc_2d))
+#         logger.info('Train result cls at at epoch [{}/{}]: acc:{:.4f}/total:{}'.format(epoch + 1, args.epochs,
+#                                                                                        acc / total, total))
 
-    return loss_meter_3d.avg, mIoU_3d, mAcc_3d, allAcc_3d, \
-           loss_meter_2d.avg, mIoU_2d, mAcc_2d, allAcc_2d
+#     return loss_meter_3d.avg, mIoU_3d, mAcc_3d, allAcc_3d, \
+#            loss_meter_2d.avg, mIoU_2d, mAcc_2d, allAcc_2d
 
 
 def validate_cross(val_loader, model, criterion):
