@@ -74,7 +74,8 @@ class CompatLoader2D:
             datacount = json.load(open(datacount_file, "r"))
         sample_count = datacount['sample_count']
         max_comp     = datacount['compositions']
-
+        
+        ### {"compositions": 100, "sample_count": {"train": 64608, "valid": 5416, "test": 10048}}, already multiplied by view_num
         if n_comp > max_comp:
             except_str = "Required number of compositions exceeds maximum available in [%s] (%d)." % (root_url, n_comp)
             raise RuntimeError(except_str)
@@ -600,10 +601,9 @@ class GCRLoader3D(CompatLoader2D):
             print('{} dataset_size, batch_size, world_size, self.view_num: '.format(self.split), dataset_size, batch_size, world_size, self.view_num)
             print("# batches per node = ", number_of_batches)
 #             if self.split=='train':
-#             loader = loader.repeat(2).slice(number_of_batches) # If dataset_size can be divided by (batch_size * world_size), then this do nothing, it works like keep_last in torch dataloader
+            loader = loader.repeat(2).slice(number_of_batches) # If number_of_batches is interger, then this do nothing, it works like keep_last in torch dataloader
             # This only sets the value returned by the len() function; nothing else uses it,
             # but some frameworks care about it.
             loader.length = number_of_batches
-            print('loader.length', loader.length)
         return loader
 
