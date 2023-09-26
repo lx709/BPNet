@@ -8,7 +8,7 @@ DATA:
   categories: 43 # 43 classes
   style: True
   mat: 14 # 13 material classes, add background as 0
-  com: 20
+  com: 10
   view_type: -1
   
 MODEL:

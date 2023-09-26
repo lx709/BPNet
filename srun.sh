@@ -4,10 +4,11 @@
 #SBATCH -J bpnet
 #SBATCH --mail-user=xiang.li.1@kaust.edu.sa
 #SBATCH --mail-type=ALL
-#SBATCH --time=48:00:00
+#SBATCH --time=96:00:00
 #SBATCH --mem=256G
 #SBATCH --gres=gpu:v100:6
 #SBATCH --cpus-per-task=12
+#SBATCH --account conf-iclr-2023.09.29-elhosemh
 
 cd /ibex/ai/home/lix0i/3DCoMPaT/BPNet
 
@@ -128,18 +129,7 @@ conda activate BPNet
 # [2023-04-28 15:07:44,846 INFO train_xiang.py line 654 141754] Class ACC0.7423
 
 ### TOTO
-# sh ./tool/train.sh com10_coarse_new2 config/compat/bpnet_10_coarse.yaml 12, not finished yet
-# batch size = 4 (gpus) x 12 (per gpu)
-# 1 epoch train+val time: 1h50m + 10m
 
-# [2023-07-08 01:38:32,579 INFO train.py line 499 142450] Train result at epoch [14/50]: mIoU/mAcc/allAcc 0.7363/0.7890/0.9593.
-# [2023-07-08 01:38:32,579 INFO train.py line 502 142450] Train result 2d at epoch [14/50]: mIoU/mAcc/allAcc 0.6329/0.6769/0.9696.
-# [2023-07-08 01:38:32,579 INFO train.py line 506 142450] Train result cls at at epoch [14/50]: acc:0.9951/total:80760
-# [2023-07-08 02:05:05,969 INFO train.py line 646 142450] Val result 3d: mIoU/mAcc/allAcc 0.3336/0.4596/0.7824.
-# [2023-07-08 02:05:05,970 INFO train.py line 648 142450] Val result 2d : mIoU/mAcc/allAcc 0.3113/0.4319/0.7958.
-# [2023-07-08 02:05:05,970 INFO train.py line 650 142450] Val result 2dmat: mIoU/mAcc/allAcc 0.6868/0.7889/0.8878.
-# [2023-07-08 02:05:05,970 INFO train.py line 652 142450] Val result 3dmat: mIoU/mAcc/allAcc 0.5712/0.6733/0.8337.
-# [2023-07-08 02:05:05,970 INFO train.py line 654 142450] Class ACC0.6718
 
 
 # sh ./tool/train.sh com10_coarse_3dcls config/compat/bpnet_10_coarse_3dcls.yaml 12
@@ -165,8 +155,10 @@ conda activate BPNet
 
 #### 
 
+# sh ./tool/train.sh com10_new_v3 config/compat/bpnet_10_coarse.yaml 64
+# 27659268
 
-# sh ./tool/train.sh com20_coarse00 config/compat/bpnet_20_coarse.yaml 64
+# sh ./tool/train.sh com20_coarse config/compat/bpnet_20_coarse.yaml 64
 # 27151041 + 27576145
 # batch size = 8 (gpus) x 6 (per gpu)
 # 1 epoch train+val time: 5h18m + 23m
@@ -202,5 +194,5 @@ conda activate BPNet
 
 
 # sh ./tool/train.sh com1_coarse config/compat/bpnet_1_coarse.yaml 64
-
+# 27658959
 
