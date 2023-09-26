@@ -193,7 +193,6 @@ def main_worker(gpu, ngpus_per_node, argss):
             if main_process():
                 logger.info("=> no weight found at '{}'".format(args.weight))
     
-    import pudb; pudb.set_trace()
     if args.resume:
         if os.path.isfile(args.resume):
             if main_process():
