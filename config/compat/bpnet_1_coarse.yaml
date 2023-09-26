@@ -8,7 +8,7 @@ DATA:
   categories: 43 # 43 classes
   style: True
   mat: 14 # 13 material classes, add background as 0
-  com: 20
+  com: 1
   view_type: -1
   
 MODEL:
@@ -24,7 +24,7 @@ MODEL:
   
 TRAIN:
   train_gpu: [0,1,2,3,4,5] # [0,1,2,3,4,5,6,7]
-  workers: 64 # data loader workers for all GPUs
+  workers: 64 # data loader workers
   batch_size: 48  # batch size for training
   batch_size_val: 48   # batch size for validation during training, memory and speed tradeoff
   base_lr: 0.002
@@ -39,14 +39,14 @@ TRAIN:
   save_freq: 1
   save_path:
   weight:  # path to initial weight (default: none)
-  resume: 'Exp/3dcompat/com20_coarse/model/model_last.pth.tar'
+  resume: 
   evaluate: True  # evaluate on validation set, extra gpu memory needed and small batch_size_val is recommend
   eval_freq: 1
 
 Distributed:
   dist_url: tcp://127.0.0.1:6786
   dist_backend: 'nccl'
-  multiprocessing_distributed: False
+  multiprocessing_distributed: True
   world_size: 1
   rank: 0
 

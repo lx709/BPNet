@@ -23,10 +23,10 @@ MODEL:
   ignore_label: 0
   
 TRAIN:
-  train_gpu: [0,1,2,3,4,5,6,7] #[ 0,1,2,3]
-  workers: 16 # data loader workers
+  train_gpu: [0,1,2,3,4,5] #[ 0,1,2,3]
+  workers: 64 # data loader workers
   batch_size: 48  # batch size for training
-  batch_size_val: 40   # batch size for validation during training, memory and speed tradeoff
+  batch_size_val: 48   # batch size for validation during training, memory and speed tradeoff
   base_lr: 0.002
   loop: 5
   epochs: 50
@@ -39,7 +39,7 @@ TRAIN:
   save_freq: 1
   save_path:
   weight:  # path to initial weight (default: none)
-  resume:
+  resume: 'Exp/3dcompat/com50_coarse/model/model_last.pth.tar'
   evaluate: True  # evaluate on validation set, extra gpu memory needed and small batch_size_val is recommend
   eval_freq: 1
 
@@ -54,9 +54,9 @@ Distributed:
 TEST:
   split: test  # split in [train, val and test]
   val_benchmark: True
-  test_workers: 0
-  test_gpu:  [0,1,2,3,4,5,6,7]
-  test_batch_size: 40
+  test_workers: 48
+  test_gpu:  [0,1,2,3]
+  test_batch_size: 48
 
   model_path:
   save_folder:

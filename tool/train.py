@@ -192,6 +192,8 @@ def main_worker(gpu, ngpus_per_node, argss):
         else:
             if main_process():
                 logger.info("=> no weight found at '{}'".format(args.weight))
+    
+    import pudb; pudb.set_trace()
     if args.resume:
         if os.path.isfile(args.resume):
             if main_process():
@@ -504,7 +506,9 @@ def train_cross(train_loader, model, criterion, optimizer, epoch):
                                                                                               allAcc_2d))
         logger.info('Train result cls at at epoch [{}/{}]: acc:{:.4f}/total:{}'.format(epoch + 1, args.epochs,
                                                                                        acc / total, total))
-
+    
+    del output_3d, output_2d, output_mat, output_3dmat, output_cls
+    
     return loss_meter_3d.avg, mIoU_3d, mAcc_3d, allAcc_3d, \
            loss_meter_2d.avg, mIoU_2d, mAcc_2d, allAcc_2d
 

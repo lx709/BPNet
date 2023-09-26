@@ -2,13 +2,11 @@
 #SBATCH -N 1
 #SBATCH --partition=batch
 #SBATCH -J bpnet
-#SBATCH -o bpnet.%J.out
-#SBATCH -e bpnet.%J.err
 #SBATCH --mail-user=xiang.li.1@kaust.edu.sa
 #SBATCH --mail-type=ALL
-#SBATCH --time=192:00:00
-#SBATCH --mem=96G
-#SBATCH --gres=gpu:v100:8
+#SBATCH --time=48:00:00
+#SBATCH --mem=256G
+#SBATCH --gres=gpu:v100:6
 #SBATCH --cpus-per-task=12
 
 cd /ibex/ai/home/lix0i/3DCoMPaT/BPNet
@@ -21,11 +19,6 @@ conda init bash
 
 conda activate BPNet
 
-# module load openmpi
-
-module load cuda/10.0.130  
-
-export OMP_NUM_THREADS=12
 
 # 24909401, 6xv100, batch=90
 # sh ./tool/train_xiang.sh com10_v1 config/compat/bpnet_10.yaml 16
@@ -135,34 +128,79 @@ export OMP_NUM_THREADS=12
 # [2023-04-28 15:07:44,846 INFO train_xiang.py line 654 141754] Class ACC0.7423
 
 ### TOTO
-# sh ./tool/train.sh com10_coarse_new2 config/compat/bpnet_10_coarse.yaml 12
+# sh ./tool/train.sh com10_coarse_new2 config/compat/bpnet_10_coarse.yaml 12, not finished yet
+# batch size = 4 (gpus) x 12 (per gpu)
+# 1 epoch train+val time: 1h50m + 10m
 
-# sh ./tool/train.sh com10_coarse_new3 config/compat/bpnet_10_coarse.yaml 12
-# running
+# [2023-07-08 01:38:32,579 INFO train.py line 499 142450] Train result at epoch [14/50]: mIoU/mAcc/allAcc 0.7363/0.7890/0.9593.
+# [2023-07-08 01:38:32,579 INFO train.py line 502 142450] Train result 2d at epoch [14/50]: mIoU/mAcc/allAcc 0.6329/0.6769/0.9696.
+# [2023-07-08 01:38:32,579 INFO train.py line 506 142450] Train result cls at at epoch [14/50]: acc:0.9951/total:80760
+# [2023-07-08 02:05:05,969 INFO train.py line 646 142450] Val result 3d: mIoU/mAcc/allAcc 0.3336/0.4596/0.7824.
+# [2023-07-08 02:05:05,970 INFO train.py line 648 142450] Val result 2d : mIoU/mAcc/allAcc 0.3113/0.4319/0.7958.
+# [2023-07-08 02:05:05,970 INFO train.py line 650 142450] Val result 2dmat: mIoU/mAcc/allAcc 0.6868/0.7889/0.8878.
+# [2023-07-08 02:05:05,970 INFO train.py line 652 142450] Val result 3dmat: mIoU/mAcc/allAcc 0.5712/0.6733/0.8337.
+# [2023-07-08 02:05:05,970 INFO train.py line 654 142450] Class ACC0.6718
 
-# sh ./tool/test.sh com10_coarse_3dcls config/compat/bpnet_10_coarse_3dcls.yaml 12
+
+# sh ./tool/train.sh com10_coarse_3dcls config/compat/bpnet_10_coarse_3dcls.yaml 12
 # 26017696
+# conclusion: classification a lot worse
 
-# sh ./tool/train.sh com10_fine_v4 config/compat/bpnet_10_fine.yaml 12
+# sh ./tool/train.sh com10_fine_v4 config/compat/bpnet_10_fine.yaml 12, not finshed yet
 # 26018855
+# [2023-06-10 17:42:52,334 INFO train.py line 499 106915] Train result at epoch [32/50]: mIoU/mAcc/allAcc 0.1279/0.1336/0.9746.
+# [2023-06-10 17:42:52,334 INFO train.py line 502 106915] Train result 2d at epoch [32/50]: mIoU/mAcc/allAcc 0.1070/0.1130/0.9775.
+# [2023-06-10 17:42:52,334 INFO train.py line 506 106915] Train result cls at at epoch [32/50]: acc:0.9960/total:26916
+# [2023-06-10 17:55:32,348 INFO train.py line 646 106915] Val result 3d: mIoU/mAcc/allAcc 0.0541/0.0758/0.7931.
+# [2023-06-10 17:55:32,349 INFO train.py line 648 106915] Val result 2d : mIoU/mAcc/allAcc 0.0580/0.0759/0.8421.
+# [2023-06-10 17:55:32,349 INFO train.py line 650 106915] Val result 2dmat: mIoU/mAcc/allAcc 0.6843/0.8071/0.8482.
+# [2023-06-10 17:55:32,349 INFO train.py line 652 106915] Val result 3dmat: mIoU/mAcc/allAcc 0.5243/0.6808/0.7874.
+# [2023-06-10 17:55:32,349 INFO train.py line 654 106915] Class ACC0.7566
+
 
 # sh ./tool/train.sh com10_fine_3dcls_v2 config/compat/bpnet_10_fine_3dcls.yaml 12
 # 26018860
+# conclusion: classification a lot worse
+
+
+#### 
+
+
+# sh ./tool/train.sh com20_coarse00 config/compat/bpnet_20_coarse.yaml 64
+# 27151041 + 27576145
+# batch size = 8 (gpus) x 6 (per gpu)
+# 1 epoch train+val time: 5h18m + 23m
+
+# [2023-09-03 12:14:09,361 INFO train.py line 498 101218] Train result at epoch [12/50]: mIoU/mAcc/allAcc 0.6164/0.6791/0.9312.
+# [2023-09-03 12:14:09,361 INFO train.py line 501 101218] Train result 2d at epoch [12/50]: mIoU/mAcc/allAcc 0.5299/0.5764/0.9507.
+# [2023-09-03 12:14:09,361 INFO train.py line 505 101218] Train result cls at at epoch [12/50]: acc:0.9917/total:40380
+# [2023-09-03 12:36:38,325 INFO train.py line 645 101218] Val result 3d: mIoU/mAcc/allAcc 0.2755/0.4010/0.7565.
+# [2023-09-03 12:36:38,325 INFO train.py line 647 101218] Val result 2d : mIoU/mAcc/allAcc 0.2992/0.3993/0.8176.
+# [2023-09-03 12:36:38,325 INFO train.py line 649 101218] Val result 2dmat: mIoU/mAcc/allAcc 0.5340/0.6893/0.7877.
+# [2023-09-03 12:36:38,325 INFO train.py line 651 101218] Val result 3dmat: mIoU/mAcc/allAcc 0.3126/0.4592/0.7037.
+# [2023-09-03 12:36:38,325 INFO train.py line 653 101218] Class ACC0.6920
+
+# sh ./tool/train.sh com50_coarse config/compat/bpnet_50_coarse.yaml 64
+# 27151042 + 27576154
+# [2023-09-03 06:09:45,917 INFO train.py line 498 56027] Train result at epoch [4/50]: mIoU/mAcc/allAcc 0.5144/0.5798/0.9073.
+# [2023-09-03 06:09:45,917 INFO train.py line 501 56027] Train result 2d at epoch [4/50]: mIoU/mAcc/allAcc 0.4634/0.5099/0.9343.
+# [2023-09-03 06:09:45,917 INFO train.py line 505 56027] Train result cls at at epoch [4/50]: acc:0.9681/total:100956
+# [2023-09-03 07:10:39,501 INFO train.py line 645 56027] Val result 3d: mIoU/mAcc/allAcc 0.2391/0.3559/0.7335.
+# [2023-09-03 07:10:39,501 INFO train.py line 647 56027] Val result 2d : mIoU/mAcc/allAcc 0.2678/0.3673/0.7687.
+# [2023-09-03 07:10:39,501 INFO train.py line 649 56027] Val result 2dmat: mIoU/mAcc/allAcc 0.4592/0.5805/0.7497.
+# [2023-09-03 07:10:39,501 INFO train.py line 651 56027] Val result 3dmat: mIoU/mAcc/allAcc 0.2997/0.4167/0.6883.
+# [2023-09-03 07:10:39,501 INFO train.py line 653 56027] Class ACC0.6875
+
+
+# sh ./tool/train.sh com5_coarse config/compat/bpnet_5_coarse.yaml 64
+# 27576125
 
 ### Test
 # sh ./tool/test.sh com10_coarse config/compat/bpnet_10_coarse.yaml 16
 # sh ./tool/test.sh com10_coarse_new2 config/compat/bpnet_10_coarse.yaml 16
-
 # sh ./tool/test.sh com10_fine_v4 config/compat/bpnet_10_fine.yaml 16
 
 
-#### 
-sh ./tool/train.sh com50_coarse config/compat/bpnet_50_coarse.yaml 12
-# 27143148
+# sh ./tool/train.sh com1_coarse config/compat/bpnet_1_coarse.yaml 64
 
-# sh ./tool/train.sh com20_coarse config/compat/bpnet_20_coarse.yaml 12
-# 27142942
-
-# sh ./tool/train.sh com50_fine config/compat/bpnet_50_fine.yaml 12
-# 26748943
 
