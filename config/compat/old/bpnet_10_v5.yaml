@@ -1,16 +1,13 @@
 DATA:
   data_name: 3dcompat
-  data_root: '/lustre/scratch/project/k1546/3DCoMPaT-v2/shards/'
-  sem_level: coarse
   classes:  44 # 275 for fine, 43 for coarse, add background as 0
-  aug: True
+  aug: False
   voxelSize: 0.01
-  categories: 42 # 42 classes, no background
+  categories: 43 # 43 classes
   style: True
   mat: 14 # 13 material classes, add background as 0
-  com: 50
+  com: 10
   view_type: -1
-  use_memory_efficient: True
   
 MODEL:
   use_2d_classifier: True
@@ -18,17 +15,17 @@ MODEL:
   viewNum: 8
   weight_2d: 0.1
   arch: bpnet # bpnet
-  layers_2d: 50
+  layers_2d: 34
   arch_3d: MinkUNet18A
   sync_bn_2d: False
   ignore_label: 0
   
 TRAIN:
-  train_gpu: [0,1,2,3,4,5,6,7] #[ 0,1,2,3]
-  workers: 80 # data loader workers
-  batch_size: 80  # batch size for training
-  batch_size_val: 80   # batch size for validation during training, memory and speed tradeoff
-  base_lr: 0.0002
+  train_gpu: [0,1,2,3,4,5] # [0,1,2,3,4,5,6,7]
+  workers: 64 # data loader workers for all GPUs
+  batch_size: 48  # batch size for training
+  batch_size_val: 48   # batch size for validation during training, memory and speed tradeoff
+  base_lr: 0.002
   loop: 5
   epochs: 50
   start_epoch: 0
@@ -40,9 +37,9 @@ TRAIN:
   save_freq: 1
   save_path:
   weight:  # path to initial weight (default: none)
-  resume: 
+  resume:
   evaluate: True  # evaluate on validation set, extra gpu memory needed and small batch_size_val is recommend
-  eval_freq: 2
+  eval_freq: 1
 
 Distributed:
   dist_url: tcp://127.0.0.1:6786
@@ -55,9 +52,9 @@ Distributed:
 TEST:
   split: test  # split in [train, val and test]
   val_benchmark: True
-  test_workers: 48
-  test_gpu: [0,1,2,3] #[0,1,2,3]
-  test_batch_size: 48
+  test_workers: 0
+  test_gpu:  [0,1]
+  test_batch_size: 24
 
   model_path:
   save_folder:
