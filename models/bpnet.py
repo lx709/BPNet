@@ -87,24 +87,31 @@ class BPNet(nn.Module):
         
         self.cls_3dmat = ME.MinkowskiConvolution(
             net3d.PLANES[7],
-#             cfg.classes,
             cfg.mat,
             kernel_size=1,
-            has_bias=True,
+            # has_bias=True,
+            bias=True,
             dimension=3)
             
+        if cfg.layers_2d==18 or cfg.layers_2d==34:
+            size_list = [64, 128, 256, 512]
+        elif cfg.layers_2d==50 or cfg.layers_2d==101 or cfg.layers_2d==152:
+            size_list = [256, 512, 1024, 2048]
+        
         if self.use_2d_classifier:
             self.pool2d = True
+            in_channel = size_list[-1]
             if self.pool2d:
-                in_channel = 512
+                pass
             else: ## pool on local features, should not use
-                in_channel = 512 * self.img_size[0]//32 * self.img_size[1]//32
+                in_channel = in_channel * self.img_size[0]//32 * self.img_size[1]//32
 
             self.fc = nn.Sequential(
                 nn.BatchNorm1d(in_channel),
                 nn.Linear(in_channel, 512), # nn.Linear(, 2048), # (C* H/8 * W/8)
-                nn.LeakyReLU(0.2),
-                nn.BatchNorm1d(512),
+                nn.LeakyReLU(0.2), 
+                nn.Dropout(0.5),
+                # nn.BatchNorm1d(512),
                 nn.Linear(512, 512),
                 nn.LeakyReLU(0.2),
                 nn.Linear(512, self.categories)
@@ -127,9 +134,9 @@ class BPNet(nn.Module):
         # classification
         # Linker
         self.linker_p2 = Linking(96, net3d.PLANES[6], viewNum=self.viewNum)
-        self.linker_p3 = Linking(128, net3d.PLANES[5], viewNum=self.viewNum)
-        self.linker_p4 = Linking(256, net3d.PLANES[4], viewNum=self.viewNum)
-        self.linker_p5 = Linking(512, net3d.PLANES[3], viewNum=self.viewNum)
+        self.linker_p3 = Linking(size_list[1], net3d.PLANES[5], viewNum=self.viewNum)
+        self.linker_p4 = Linking(size_list[2], net3d.PLANES[4], viewNum=self.viewNum)
+        self.linker_p5 = Linking(size_list[3], net3d.PLANES[3], viewNum=self.viewNum)
     
     def init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -162,14 +169,14 @@ class BPNet(nn.Module):
         x5 = self.layer4_2d(x4)  # 1/32, 
         
         if self.use_2d_classifier:
-            # (VB, 512, 8, 8) - > (VB, 512) - >  (V, B, 512) -> (B, 512) -> (B C)
+            # (VB, 512, 8, 8) - > (VB, 512) - >  (V, B, 512) -> (B, 512) --> (B C)
             if self.pool2d:
                 x6 = torch.max(F.max_pool2d(x5, (h//32, w//32)).squeeze().view(v, b, -1), 0)[0].view(b,-1)
             else:
                 x6 = torch.max(x5.view(v, b, x5.shape[-3], x5.shape[-2], x5.shape[-1]), 0)[0].view(b,-1)
             categories_2d = self.fc(x6)
 
-
+        # import pudb; pudb.set_trace()
         # 3D feature extract
         out_p1 = self.layer0_3d(sparse_3d)
         out_b1p2 = self.layer1_3d(out_p1)

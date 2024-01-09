@@ -151,10 +151,11 @@ def main_worker(gpu, ngpus_per_node, argss):
             model.layer6_3d, model.layer7_3d, model.layer8_3d, model.layer9_3d, model.cls_3d, model.cls_3dmat,
             model.linker_p2, model.linker_p3, model.linker_p4, model.linker_p5, 
         ]
+        
         if args.use_2d_classifier:
-            modules_ori.append(model.fc) # need to use a small lr for classification
+            modules_new.append(model.fc) # need to use a small lr for classification
         if args.use_3d_classifier:
-            modules_ori.append(model.fc3d) # need to use a small lr for classification
+            modules_new.append(model.fc3d) # need to use a small lr for classification
         
         params_list = []
         for module in modules_ori:
@@ -174,12 +175,13 @@ def main_worker(gpu, ngpus_per_node, argss):
         args.batch_size = int(args.batch_size / ngpus_per_node)
         args.batch_size_val = int(args.batch_size_val / ngpus_per_node)
         args.workers = int(args.workers / ngpus_per_node)
-        model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[gpu], find_unused_parameters=True)
+        model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[gpu]) #, find_unused_parameters=True
     else:
         model = model.cuda()
 #         model = torch.nn.DataParallel(model).cuda() # this will split batch into different gpus and will cause error
 
     criterion = nn.CrossEntropyLoss(ignore_index=args.ignore_label).cuda(gpu)
+    criterion2 = nn.CrossEntropyLoss().cuda(gpu)
 
     if args.weight:
         if os.path.isfile(args.weight):
@@ -240,7 +242,7 @@ def main_worker(gpu, ngpus_per_node, argss):
         if args.data_name == '3dcompat':
             loss_train, mIoU_train, mAcc_train, allAcc_train, \
             loss_train_2d, mIoU_train_2d, mAcc_train_2d, allAcc_train_2d \
-                = train_cross(train_loader, model, criterion, optimizer, epoch)
+                = train_cross(train_loader, model, criterion, criterion2, optimizer, epoch)
         else:
             pass
             
@@ -257,13 +259,13 @@ def main_worker(gpu, ngpus_per_node, argss):
                 writer.add_scalar('allAcc_train_2d', allAcc_train_2d, epoch_log)
 
         is_best = False
-        if args.evaluate and (epoch_log % args.eval_freq == 0):
+        if args.evaluate and (epoch_log>=20 or epoch_log % args.eval_freq == 0):
             if args.data_name == '3dcompat':
                 loss_val, mIoU_val, mAcc_val, allAcc_val, \
                 loss_val_2d, mIoU_val_2d, mAcc_val_2d, allAcc_val_2d \
-                    = validate_cross(val_loader, model, criterion)
+                    = validate_cross(val_loader, model, criterion, criterion2)
             else:
-                loss_val, mIoU_val, mAcc_val, allAcc_val = validate(val_loader, model, criterion)
+                loss_val, mIoU_val, mAcc_val, allAcc_val = validate(val_loader, model, criterion, criterion2)
 
             if main_process():
                 writer.add_scalar('loss_val', loss_val, epoch_log)
@@ -278,8 +280,14 @@ def main_worker(gpu, ngpus_per_node, argss):
                 # remember best iou and save checkpoint
                 is_best = mIoU_val > best_iou
                 best_iou = max(best_iou, mIoU_val)
-
-        if (epoch_log % args.save_freq == 0) and main_process():
+        
+        save_start_epoch = 20
+        if args.com==20:
+            save_start_epoch = 15
+        if args.com==50:
+            save_start_epoch = 10
+        
+        if (epoch_log>=save_start_epoch and epoch_log % args.save_freq == 0) and main_process():
             save_checkpoint(
                 {
                     'epoch': epoch_log,
@@ -308,7 +316,7 @@ def get_model(cfg):
     return model
 
 
-def train_cross(train_loader, model, criterion, optimizer, epoch):
+def train_cross(train_loader, model, criterion, criterion2, optimizer, epoch):
     # raise NotImplemented
     torch.backends.cudnn.enabled = True
     batch_time = AverageMeter()
@@ -336,16 +344,16 @@ def train_cross(train_loader, model, criterion, optimizer, epoch):
             # For some networks, making the network invariant to even, odd coords is important
             coords[:, 1:4] += (torch.rand(3) * 100).type_as(coords)
             
-            sinput = SparseTensor(feat.cuda(non_blocking=True), coords) #allow_duplicate_coords=True
+            sinput = SparseTensor(feat.cuda(non_blocking=True), coords.cuda()) #allow_duplicate_coords=True
             color, link = color.cuda(non_blocking=True), link.cuda(non_blocking=True)
 
             label_3d, label_2d = label_3d.cuda(non_blocking=True), label_2d.cuda(non_blocking=True)
             cls, mat, mat_3d = cls.cuda(non_blocking=True), mat.cuda(non_blocking=True), mat_3d.cuda(non_blocking=True)
 
-#             print('model inputs:', sinput.shape, color.shape, link.shape, cls.shape)
+            # print('model inputs:', coords.shape, color.shape, link.shape, cls.shape, label_2d.shape)
             output_3d, output_2d, output_mat, output_3dmat, output_cls = model(sinput, color, link)
             
-#             print('model outputs:', output_3d.shape, output_2d.shape, output_mat.shape, output_3dmat.shape, output_cls.shape)
+            # print('model outputs:', output_3d.shape, output_2d.shape, output_mat.shape, output_3dmat.shape, output_cls.shape)
             
             loss_2d = criterion(output_2d, label_2d)
             loss_mat = criterion(output_mat, mat)
@@ -355,12 +363,12 @@ def train_cross(train_loader, model, criterion, optimizer, epoch):
             
 #             print('output_cls, cls.max', output_cls.shape, output_cls[0], cls)
             assert cls.max() <= args.categories - 1
-            loss_cls = criterion(output_cls, cls)
+            loss_cls = criterion2(output_cls, cls)
             
             if args.use_3d_classifier:
                 loss = loss_3d + loss_3dmat + args.weight_2d * (loss_2d + loss_mat) + loss_cls
             else:
-                loss = loss_3d + loss_3dmat + args.weight_2d * (loss_2d + loss_mat + loss_cls)
+                loss = loss_3d + loss_3dmat + args.weight_2d * (loss_2d + loss_mat) + loss_cls
         else:
             raise NotImplemented
         
@@ -390,6 +398,7 @@ def train_cross(train_loader, model, criterion, optimizer, epoch):
 
         # ############ 2D ############ #
         output_2d = output_2d.detach().max(1)[1]
+        # print('output_2d, label_2d', output_2d.shape, label_2d.shape)
         intersection, union, target = intersectionAndUnionGPU(output_2d, label_2d.detach(), args.classes,
                                                               args.ignore_label)
         intersection, union, target = intersection.cpu().numpy(), union.cpu().numpy(), target.cpu().numpy()
@@ -512,7 +521,7 @@ def train_cross(train_loader, model, criterion, optimizer, epoch):
            loss_meter_2d.avg, mIoU_2d, mAcc_2d, allAcc_2d
 
 
-def validate_cross(val_loader, model, criterion):
+def validate_cross(val_loader, model, criterion, criterion2):
     torch.backends.cudnn.enabled = False  # for cudnn bug at https://github.com/pytorch/pytorch/issues/4107
     loss_meter, loss_meter_3d, loss_meter_2d, loss_meter_cls = AverageMeter(), AverageMeter(), AverageMeter(), AverageMeter()
     intersection_meter_3d, intersection_meter_2d = AverageMeter(), AverageMeter()
@@ -531,7 +540,7 @@ def validate_cross(val_loader, model, criterion):
         for i, batch_data in enumerate(val_loader):
             if args.data_name == '3dcompat':
                 (coords, feat, label_3d, color, label_2d, link, cls, mat, mat3d, model_id, inds_reverse, _, _) = batch_data
-                sinput = SparseTensor(feat.cuda(non_blocking=True), coords)
+                sinput = SparseTensor(feat.cuda(non_blocking=True), coords.cuda())
                 color, link = color.cuda(non_blocking=True), link.cuda(non_blocking=True)
                 label_3d, label_2d, = label_3d.cuda(non_blocking=True), label_2d.cuda(non_blocking=True)
                 cls, mat = cls.cuda(non_blocking=True), mat.cuda(non_blocking=True)
@@ -554,7 +563,7 @@ def validate_cross(val_loader, model, criterion):
             loss_3d = criterion(output_3d, label_3d)
             loss_3dmat = criterion(output_3dmat, mat3d)
             
-            loss_cls = criterion(output_cls, cls)
+            loss_cls = criterion2(output_cls, cls)
 
             loss = loss_3d + loss_3dmat + args.weight_2d * (loss_2d * loss_mat + loss_cls)
 

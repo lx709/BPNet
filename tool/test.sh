@@ -11,8 +11,8 @@ exp_name=$1
 config=$2
 T=$3
 
-module load gcc/7.5.0
-module load cuda/10.0.130
+# module load gcc/7.5.0
+# module load cuda/10.0.130
 
 export OPENBLAS_NUM_THREADS=${T}
 export GOTO_NUM_THREADS=${T}

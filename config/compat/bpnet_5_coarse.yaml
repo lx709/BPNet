@@ -5,7 +5,7 @@ DATA:
   classes:  44 # 275 for fine, 43 for coarse, add background as 0
   aug: True
   voxelSize: 0.01
-  categories: 43 # 43 classes
+  categories: 42 # 42 classes, no background
   style: True
   mat: 14 # 13 material classes, add background as 0
   com: 5
@@ -17,19 +17,19 @@ MODEL:
   viewNum: 8
   weight_2d: 0.1
   arch: bpnet # bpnet
-  layers_2d: 34
+  layers_2d: 50
   arch_3d: MinkUNet18A
   sync_bn_2d: False
   ignore_label: 0
   
 TRAIN:
-  train_gpu: [0,1,2,3,4,5] # [0,1,2,3,4,5,6,7]
-  workers: 64 # data loader workers
+  train_gpu: [0,1,2,3] # [0,1,2,3,4,5,6,7]
+  workers: 32 # data loader workers
   batch_size: 48  # batch size for training
   batch_size_val: 48   # batch size for validation during training, memory and speed tradeoff
   base_lr: 0.002
   loop: 5
-  epochs: 50
+  epochs: 80
   start_epoch: 0
   power: 0.9
   momentum: 0.9
@@ -39,7 +39,7 @@ TRAIN:
   save_freq: 1
   save_path:
   weight:  # path to initial weight (default: none)
-  resume: 
+  resume: Exp/3dcompat/com5_coarse/model/model_last.pth.tar
   evaluate: True  # evaluate on validation set, extra gpu memory needed and small batch_size_val is recommend
   eval_freq: 1
 
@@ -55,8 +55,8 @@ TEST:
   split: test  # split in [train, val and test]
   val_benchmark: True
   test_workers: 48
-  test_gpu:  [0,1,2,3]
-  test_batch_size: 48
+  test_gpu: [0,1,2,3] #[0,1,2,3]
+  test_batch_size: 80
 
   model_path:
   save_folder:

@@ -114,14 +114,16 @@ class MinkUNetBase(ResNetBase):
             self.PLANES[7],
             out_channels,
             kernel_size=1,
-            has_bias=True,
+            # has_bias=True,
+            bias=True,
             dimension=D)
         
         self.cls_3dmat = ME.MinkowskiConvolution(
             self.PLANES[7],
             10,
             kernel_size=1,
-            has_bias=True,
+            # has_bias=True,
+            bias=True,
             dimension=3)
         
         self.global_max_pool = ME.MinkowskiGlobalMaxPooling()

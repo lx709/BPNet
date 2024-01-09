@@ -154,7 +154,11 @@ def main_worker(gpu, ngpus_per_node, argss):
         if main_process():
             logger.info("=> loading checkpoint '{}'".format(args.model_path))
         checkpoint = torch.load(args.model_path, map_location=lambda storage, loc: storage.cuda())
-        model.load_state_dict(checkpoint['state_dict'], strict=True)
+        if args.multiprocessing_distributed:
+            model.load_state_dict(checkpoint['state_dict'], strict=True)
+        else:
+            new_state_dict = {k.replace('module.', ''): v for k, v in checkpoint['state_dict'].items()}
+            model.load_state_dict(new_state_dict, strict=True)
         if main_process():
             logger.info("=> loaded checkpoint '{}' (epoch {})".format(args.model_path, checkpoint['epoch']))
     else:
@@ -168,17 +172,19 @@ def main_worker(gpu, ngpus_per_node, argss):
         from dataset.GCR_loader import GCRLoader3D
 
         ROOT_URL = args.data_root
-
-        val_loader = GCRLoader3D(root_url=ROOT_URL, split='valid', n_comp=args.com, view_type=args.view_type, sem_level=args.sem_level).make_loader(batch_size=args.test_batch_size, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
         
-        test_loader = GCRLoader3D(root_url=ROOT_URL, split='test', n_comp=args.com, view_type=args.view_type, sem_level=args.sem_level).make_loader(batch_size=args.test_batch_size, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
+        args.com = 10 # always evaluate on 10 compositions
+        
+        # val_loader = GCRLoader3D(root_url=ROOT_URL, split='valid', n_comp=args.com, view_type=args.view_type, sem_level=args.sem_level).make_loader(batch_size=args.test_batch_size, num_workers=args.workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
+        
+        test_loader = GCRLoader3D(root_url=ROOT_URL, split='test', n_comp=args.com, view_type=args.view_type, sem_level=args.sem_level).make_loader(batch_size=args.test_batch_size, num_workers=args.test_workers, aug=args.aug, voxelSize=args.voxelSize, distributed=args.distributed, world_size=args.world_size)
         
     else:
         raise Exception('Dataset not supported yet'.format(args.data_name))
 
     # ####################### Test ####################### #
     print('start evaluation')
-    validate_cross(model, val_loader)
+    # validate_cross(model, val_loader)
     test_cross_3d(model, test_loader)
     
 def validate_cross(model, val_loader):
@@ -369,15 +375,15 @@ def test_cross_3d(model, val_data_loader):
     
     with torch.no_grad():
         
-        for i, batch_data in tqdm(enumerate(val_data_loader)):
+        for i, batch_data in enumerate(val_data_loader):
 
             (coords, feat, label_3d, color, label_2d, link, cls, mat, mat3d, model_id, inds_reverse, style_id, view_id) = batch_data
-
-            sinput = SparseTensor(feat.cuda(non_blocking=True), coords)
-            color, link = color.cuda(non_blocking=True), link.cuda(non_blocking=True)
-            label_3d, label_2d, = label_3d.cuda(non_blocking=True), label_2d.cuda(non_blocking=True)
-            cls, mat = cls.cuda(non_blocking=True), mat.cuda(non_blocking=True)
-            mat3d = mat3d.cuda(non_blocking=True)
+            # print('feat, coords', feat, coords)
+            sinput = SparseTensor(feat.cuda(), coords.cuda())
+            color, link = color.cuda(), link.cuda()
+            label_3d, label_2d, = label_3d.cuda(), label_2d.cuda()
+            cls, mat = cls.cuda(), mat.cuda()
+            mat3d = mat3d.cuda()
 
             output_3d, output_2d, output_mat, output_3dmat, output_cls = model(sinput, color, link)
 
@@ -388,8 +394,11 @@ def test_cross_3d(model, val_data_loader):
             output_3d = output_3d.detach().max(1)[1]
             intersection, union, target = intersectionAndUnionGPU(output_3d, label_3d.detach(), args.classes,
                                                                   args.ignore_label)
+            # import pudb; pudb.set_trace()
+            # print('before merge', i, coords.shape, color.shape, output_3d.shape, label_3d.shape)
             if args.multiprocessing_distributed:
                 dist.all_reduce(intersection), dist.all_reduce(union), dist.all_reduce(target)
+            
             intersection, union, target = intersection.cpu().numpy(), union.cpu().numpy(), target.cpu().numpy()
             intersection_meter_3d.update(intersection)
             union_meter_3d.update(union)
@@ -472,11 +481,16 @@ def test_cross_3d(model, val_data_loader):
             
             data = {'pred_parts': pred_parts, 'gt_parts': gt_parts, 'pred_mats': pred_mats, 'gt_mats': gt_mats, 'pred_objs': pred_objs, 'gt_objs': gt_objs, 'model_ids':model_ids, 'style_ids': style_ids, 'view_ids': view_ids}
 
-            with h5py.File(os.path.join(args.save_folder, 'test_outputs.h5'), 'w') as f:
+            os.makedirs(args.save_folder, exist_ok=True)
+            save_path = os.path.join(args.save_folder, 'test_outputs_2.h5')
+            if os.path.exists(save_path):
+                # remove file
+                os.system('rm {}'.format(save_path))
+                
+            with h5py.File(save_path, 'w') as f:
                 for name, arr in data.items():
                     f.create_dataset(name, data=arr)
-            print('save results done')
+            print(f'save results to {save_path}')
         
-
 if __name__ == '__main__':
     main()

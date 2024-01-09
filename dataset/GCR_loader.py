@@ -391,7 +391,7 @@ class GCRLoader3D(CompatLoader2D):
                     transform=wds_identity,
                     mask_transform=wds_identity,
                     part_mat_transform=wds_identity,
-                    depth_transform=wds_identity):
+                    depth_transform=wds_identity, use_memory_efficient=False):
         super().__init__(root_url, split, sem_level, n_comp, cache_dir, view_type, transform)
         
         self.mask_transform  = partial(masks.mask_decode_partial, mask_transform, [0, 1])
@@ -399,6 +399,8 @@ class GCRLoader3D(CompatLoader2D):
         self.split_masks = partial(stream.split_masks, 3)
         self.part_mat_transform = part_mat_transform
         self.split = split
+        self.n_comp = n_comp
+        self.use_memory_efficient = use_memory_efficient
         
         self.load_point_clouds(sem_level)
         
@@ -409,33 +411,72 @@ class GCRLoader3D(CompatLoader2D):
         self.length = None
 
     def load_point_clouds(self, sem_level = 'coarse'):
-        
-        hdf_path = '/lustre/scratch/project/k1546/3DCoMPaT-v2/hdf5/'
+        '''
+        # The function will cause large memory consumption, use lazy loading instead
+        '''
+        # hdf_path = '/lustre/scratch/project/k1546/3DCoMPaT-v2/hdf5/'
 
-        data = h5py.File(hdf_path + '{}_{}.hdf5'.format(self.split, sem_level))
+        if self.n_comp<=10:
+            hdf_path = '/home/lix0i/Xiang/3DCoMPaT/BPNet/hdf5/'
+        elif self.n_comp<=50:   
+            hdf_path = '/home/lix0i/Xiang/3DCoMPaT/BPNet/hdf5_50/'
+        else:
+            assert 'not support'
+        
+        data = h5py.File(hdf_path + '{}_{}.hdf5'.format(self.split, sem_level), 'r')
 
         self.all_shape_ids = np.array(data['shape_id']).astype('str')
         self.all_style_ids = np.array(data['style_id']).astype('uint8')
-        self.all_points = np.array(data['points']).astype('float16')
-        self.all_obj_label = np.array(data['shape_label']).astype('uint8')
-        self.all_part_labels = np.array(data['points_part_labels']).astype('uint16')
-        self.all_mat_labels = np.array(data['points_mat_labels']).astype('uint8')
-    
+
+        if not self.use_memory_efficient:
+            self.all_points = np.array(data['points']).astype('float16')
+            self.all_obj_label = np.array(data['shape_label']).astype('uint8')
+            self.all_part_labels = np.array(data['points_part_labels']).astype('uint16')
+            self.all_mat_labels = np.array(data['points_mat_labels']).astype('uint8')
+
     def load_point_cloud(self, model_id, style_id):
 
-        idx = np.where((self.all_shape_ids == model_id) & (self.all_style_ids == style_id))[0][0]
-
+        idxs = np.where((self.all_shape_ids == model_id) & (self.all_style_ids == style_id))[0]
+        if len(idxs)>=1:
+            idx = idxs[0]
+        else:
+            idx = None
+            assert "cannot find a matched 3D mdoel", (model_id, style_id, idxs)
         if idx is None:
             assert 'cannot find a matched 3D mdoel'
-        locs_in = self.all_points[idx][:,:3]
-        feats_in = self.all_points[idx][:,3:]
-#         feats_in = np.random.randn(locs_in.shape[0],3)
+        
+        all_points = self.all_points[idx]
+        locs_in = all_points[:,:3]
+        feats_in = all_points[:,3:]
         part_3d = self.all_part_labels[idx] + 1 # add background classes
         mat_3d = self.all_mat_labels[idx] + 1 # add background classes
         labels_in = np.stack([part_3d, mat_3d], -1)
-
+        # print('idx', idx, locs_in.shape)
         return locs_in, feats_in, labels_in
 
+    def load_point_cloud_memory_efficient(self, model_id, style_id):
+
+        idxs = np.where((self.all_shape_ids == model_id) & (self.all_style_ids == style_id))[0]
+        if len(idxs)>=1:
+            idx = idxs[0]
+        else:
+            idx = None
+            assert "cannot find a matched 3D mdoel", (model_id, style_id, idxs)
+        if idx is None:
+            assert 'cannot find a matched 3D mdoel'
+        
+        assert idx is not None, (model_id, style_id, idxs)
+
+        data = np.load('pt_files_{}/item_{}.npz'.format(self.split, idx))   
+        all_points = data['points']
+        locs_in = all_points[:,:3]
+        feats_in = all_points[:,3:6]
+        part_3d = data['points_part_labels'] + 1 # add background classes
+        mat_3d = data['points_mat_labels'] + 1 # add background classes
+        labels_in = np.stack([part_3d, mat_3d], -1)
+        # print('idx', idx, locs_in.shape)
+        return locs_in, feats_in, labels_in
+    
     # Define a function to process each item in the dataset
     def process_item(self, item, voxelSize=0.05, aug=True):
         '''
@@ -457,9 +498,13 @@ class GCRLoader3D(CompatLoader2D):
         IMG_DIM = (colors.shape[-2],colors.shape[-1])
 
         # Load the corresponding point cloud
-        locs_in, feats_in, labels_in = self.load_point_cloud(model_id, style_id)
+        if not self.use_memory_efficient:
+            locs_in, feats_in, labels_in = self.load_point_cloud(model_id, style_id)
+        else:
+            locs_in, feats_in, labels_in = self.load_point_cloud_memory_efficient(model_id, style_id)
         coords = locs_in.copy()
         coords[:,2] = coords[:,2] - coords[:,2].min() # move up z-axis
+        # print('locs_in.shape, coords.shape', locs_in.shape, coords.shape)
 
         ## tensor to numpy
         colors = colors.permute(1,2,0).numpy()
@@ -601,7 +646,7 @@ class GCRLoader3D(CompatLoader2D):
             print('{} dataset_size, batch_size, world_size, self.view_num: '.format(self.split), dataset_size, batch_size, world_size, self.view_num)
             print("# batches per node = ", number_of_batches)
 #             if self.split=='train':
-            loader = loader.repeat(2).slice(number_of_batches) # If number_of_batches is interger, then this do nothing, it works like keep_last in torch dataloader
+            # loader = loader.repeat(2).slice(number_of_batches) # If number_of_batches is interger, then this do nothing, it works like keep_last in torch dataloader
             # This only sets the value returned by the len() function; nothing else uses it,
             # but some frameworks care about it.
             loader.length = number_of_batches

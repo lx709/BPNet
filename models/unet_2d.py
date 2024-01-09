@@ -14,31 +14,43 @@ class ResUnet(nn.Module):
             resnet = models.resnet18(pretrained=True, deep_base=False)
             block = models.BasicBlock
             layers = [2, 2, 2, 2]
+            size_list = [64, 128, 256, 512]
         elif layers == 34:
             resnet = models.resnet34(pretrained=True, deep_base=False)
             block = models.BasicBlock
             layers = [3, 4, 6, 3]
+            size_list = [64, 128, 256, 512]
         elif layers == 50:
             resnet = models.resnet50(pretrained=True, deep_base=False)
             block = models.Bottleneck
             layers = [3, 4, 6, 3]
+            size_list = [256, 512, 1024, 2048]
+        elif layers == 101:
+            resnet = models.resnet101(pretrained=True, deep_base=False)
+            block = models.Bottleneck
+            layers = [3, 4, 23, 3]
+            size_list = [256, 512, 1024, 2048]
+        else:
+            raise NotImplementedError
+        
+        block.expansion = 1 # added by xiang on Nov 28, 2023
+        
         self.layer0 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.maxpool)
         self.layer1, self.layer2, self.layer3, self.layer4 = resnet.layer1, resnet.layer2, resnet.layer3, resnet.layer4
         # self.categories = cfg.categories
         # Decoder
         # self.up4 = nn.Sequential(nn.ConvTranspose2d(512,256,kernel_size=2,stride=2),BatchNorm(256),nn.ReLU())
-        self.up4 = nn.Sequential(nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1), BatchNorm(256), nn.ReLU())
-        resnet.inplanes = 256 + 256
-        self.delayer4 = resnet._make_layer(block, 256, layers[-1])
+        self.up4 = nn.Sequential(nn.Conv2d(size_list[-1], size_list[-2], kernel_size=3, stride=1, padding=1), BatchNorm(size_list[-2]), nn.ReLU())
+        resnet.inplanes = size_list[-2] + size_list[-2]
+        self.delayer4 = resnet._make_layer(block, size_list[-2], layers[-1])
 
-        self.up3 = nn.Sequential(nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1), BatchNorm(128), nn.ReLU())
-        resnet.inplanes = 128 + 128
-        self.delayer3 = resnet._make_layer(block, 128, layers[-2])
+        self.up3 = nn.Sequential(nn.Conv2d(size_list[-2], size_list[-3], kernel_size=3, stride=1, padding=1), BatchNorm(size_list[-3]), nn.ReLU())
+        resnet.inplanes = size_list[-3] + size_list[-3]
+        self.delayer3 = resnet._make_layer(block, size_list[-3], layers[-2])
 
-        self.up2 = nn.Sequential(nn.Conv2d(128, 96, kernel_size=3, stride=1, padding=1), BatchNorm(96), nn.ReLU())
-        resnet.inplanes = 96 + 64
+        self.up2 = nn.Sequential(nn.Conv2d(size_list[-3], 96, kernel_size=3, stride=1, padding=1), BatchNorm(96), nn.ReLU())
+        resnet.inplanes = 96 + size_list[-4]
         self.delayer2 = resnet._make_layer(block, 96, layers[-3])
-
 
         self.cls = nn.Sequential(
             nn.Conv2d(96, 256, kernel_size=3, padding=1, bias=False),
@@ -101,6 +113,7 @@ class ResUnet(nn.Module):
         p2 = self.up2(F.interpolate(p3, x2.shape[-2:], mode='bilinear', align_corners=True))
         p2 = torch.cat([p2, x2], dim=1)
         p2 = self.delayer2(p2)
+        
         x = self.cls(p2)
         x = F.interpolate(x, size=(h, w), mode='bilinear', align_corners=True)
         x = x.view(b,v,-1,h,w).permute(0,2,3,4,1)
